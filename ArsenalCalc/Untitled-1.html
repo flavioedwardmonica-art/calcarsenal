@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Arsenal Sports Calc</title>
+
+    <meta name="theme-color" content="#002d5c">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-512.png">
+
+    <style>
+        :root {
+            --primary: #004a99;
+            --dark: #002d5c;
+            --accent: #d9534f;
+            --bg: #f8f9fa;
+            --card: #ffffff;
+            --text: #2d3436;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .app-shell {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+        }
+
+        header {
+            background: var(--dark);
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+            border-radius: 0 0 30px 30px;
+        }
+
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background: white;
+            margin: 0 auto 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .logo-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        h1 { margin: 0; font-size: 1.4rem; letter-spacing: 1px; }
+
+        main { padding: 25px; flex-grow: 1; }
+
+        .cotacao-badge {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 25px;
+            color: var(--primary);
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .field { margin-bottom: 20px; }
+        label { display: block; font-size: 0.8rem; font-weight: 700; color: #636e72; margin-bottom: 8px; text-transform: uppercase; }
+
+        input, select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #edf2f7;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+
+        input:focus { border-color: var(--primary); background: #f1f7ff; }
+
+        button {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        button:active { transform: scale(0.97); opacity: 0.9; }
+
+        #result-area {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #fff5f5;
+            border-radius: 20px;
+            border: 2px solid #ffe3e3;
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .res-line { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; }
+        .res-total { border-top: 1px solid #ffcfcf; padding-top: 10px; margin-top: 10px; color: var(--accent); font-size: 1.5rem; font-weight: 900; }
+
+        footer { text-align: center; padding: 20px; font-size: 0.7rem; color: #b2bec3; }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+    <header>
+        <div class="logo-placeholder">
+            <img src="icon-512.png" alt="Arsenal Logo">
+        </div>
+        <h1>ARSENAL SPORTS</h1>
+    </header>
+
+    <main>
+        <div class="cotacao-badge" id="dolarBox">
+            Carregando dólar...
+        </div>
+
+        <div class="field">
+            <label>Preço de Custo (USD)</label>
+            <input type="text" id="custo" inputmode="decimal" placeholder="Ex: 150,00">
+        </div>
+
+        <div class="field">
+            <label>Categoria do Produto</label>
+            <select id="margem">
+                <option value="1.50">Acessórios (+50%)</option>
+                <option value="1.70">AEG / GBB (+70%)</option>
+                <option value="2.00">Equipamento Pesado (+100%)</option>
+            </select>
+        </div>
+
+        <button onclick="calcular()">GERAR PREÇO FINAL</button>
+
+        <div id="result-area">
+            <div class="res-line">
+                <span>Venda (USD):</span>
+                <span id="vendaUSD">US$ 0.00</span>
+            </div>
+            <div class="res-line res-total">
+                <span>TOTAL R$:</span>
+                <span id="vendaBRL">R$ 0,00</span>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2024 Arsenal Sports • Versão Digital
+    </footer>
+</div>
+
+<script>
+    let taxaDolar = 0;
+
+    // Ajusta o input para facilitar no celular
+    document.getElementById('custo').addEventListener('input', function(e) {
+        this.value = this.value.replace(/[^0-9,.]/g, '').replace('.', ',');
+    });
+
+    async function pegarDolar() {
+        try {
+            const r = await fetch("https://economia.awesomeapi.com.br/last/USD-BRL");
+            const d = await r.json();
+            taxaDolar = parseFloat(d.USDBRL.bid);
+            document.getElementById('dolarBox').innerHTML = Câmbio Atual: <strong>R$ ${taxaDolar.toFixed(2).replace('.', ',')}</strong>;
+        } catch (e) {
+            document.getElementById('dolarBox').innerText = "Erro ao buscar câmbio.";
+        }
+    }
+
+    function calcular() {
+        const input = document.getElementById('custo').value.replace(',', '.');
+        const valorCusto = parseFloat(input);
+        const margem = parseFloat(document.getElementById('margem').value);
+
+        if (!valorCusto || taxaDolar === 0) {
+            alert("Preencha o valor e aguarde a cotação.");
+            return;
+        }
+
+        const finalUSD = valorCusto * margem;
+        const finalBRL = finalUSD * taxaDolar;
+
+        document.getElementById('vendaUSD').innerText = US$ ${finalUSD.toFixed(2)};
+        document.getElementById('vendaBRL').innerText = finalBRL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        document.getElementById('result-area').style.display = 'block';
+    }
+
+    // Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+
+    pegarDolar();
+</script>
+
+</body>
+</html>
